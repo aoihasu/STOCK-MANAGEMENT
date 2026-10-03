@@ -5,6 +5,6 @@
 <link rel="stylesheet" href="style.css"></head><body>
 <header><h1>📦 Stock Manager</h1>
 <div style="display:flex;gap:6px;flex-wrap:wrap"><label class="btn sec" style="border:1px solid var(--line);background:transparent;color:var(--fg)">Import Excel<input id="file" type="file" accept=".xlsx,.xls" hidden></label><button id="exp">Export to Excel</button></div></header>
-<nav id="nav"></nav><main id="view"></main><div id="toast"></div>
+<nav id="nav"></nav><div id="bar"><div id="alert"></div><input id="q" type="search" placeholder="Search this table (name, ID, status, unpaid...)" hidden></div><main id="view"></main><div id="inv"></div><div id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="script.js"></script></body></html>
