@@ -2,8 +2,8 @@ const SHEETS={
 Products:{key:'products',pre:'P',cols:[['id','Product ID','t'],['name','Product Name','t'],['category','Category','t'],['unit','Unit','t'],['vendorId','Vendor ID','r:vendors'],['cost','Cost Price','n'],['price','Selling Price','n'],['gst','GST %','n'],['opening','Opening Stock','n'],['reorder','Reorder Level','n']]},
 Vendors:{key:'vendors',pre:'V',cols:[['id','Vendor ID','t'],['name','Vendor Name','t'],['contact','Contact Person','t'],['phone','Phone','t'],['email','Email','t'],['address','Address','t'],['gstin','GSTIN','t'],['terms','Payment Terms','t']]},
 Customers:{key:'customers',pre:'C',cols:[['id','Customer ID','t'],['name','Customer Name','t'],['contact','Contact Person','t'],['phone','Phone','t'],['email','Email','t'],['address','Address','t'],['gstin','GSTIN','t']]},
-Purchases:{key:'purchases',pre:'PUR-',cols:[['date','Date','d'],['id','Purchase ID','t'],['vendorId','Vendor ID','r:vendors'],['productId','Product ID','r:products'],['qty','Quantity','n'],['cost','Unit Cost','n'],['status','Payment Status','s']]},
-Sales:{key:'sales',pre:'INV-',cols:[['date','Date','d'],['id','Invoice No','t'],['customerId','Customer ID','r:customers'],['productId','Product ID','r:products'],['qty','Quantity','n'],['price','Unit Price','n'],['status','Payment Status','s']]}};
+Purchases:{key:'purchases',pre:'PUR-',cols:[['date','Date','d'],['id','Purchase ID','t'],['vendorId','Vendor ID','r:vendors'],['productId','Product ID','r:products'],['qty','Quantity','n'],['status','Payment Status','s']]},
+Sales:{key:'sales',pre:'INV-',cols:[['date','Date','d'],['id','Invoice No','t'],['customerId','Customer ID','r:customers'],['productId','Product ID','r:products'],['qty','Quantity','n'],['status','Payment Status','s']]}};
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const num=v=>Number(v)||0;
@@ -17,7 +17,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';cl
 const prod=id=>S.products.find(p=>p.id===id);
 const biz=()=>S.cfg.name||'our business';
 /* GST: prices are entered WITHOUT GST; the product's GST % is added on top */
-const line=(r,k)=>{const tx=num(r.qty)*num(k==='s'?r.price:r.cost),g=tx*num(prod(r.productId)?.gst)/100;return{tx,g,tot:tx+g}};
+const line=(r,k)=>{const p=prod(r.productId)||{},tx=num(r.qty)*num(k==='s'?p.price:p.cost),g=tx*num(prod(r.productId)?.gst)/100;return{tx,g,tot:tx+g}};
 /* WhatsApp: opens a chat with a ready-typed message; you press Send yourself */
 function wa(ph,txt){let d=String(ph||'').replace(/\D/g,'').replace(/^0+/,'');if(!d)return '<span class="hint">no phone</span>';if(d.length===10)d=(S.cfg.cc||'91')+d;
  return `<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${d}?text=${encodeURIComponent(txt)}">WhatsApp</a>`}
@@ -42,8 +42,8 @@ const EX={
 Products:[['Vendor',r=>esc(K.vn[r.vendorId]||'')],['Stock',r=>K.P[r.id]?.stock??''],['Status',r=>K.P[r.id]?badge(K.P[r.id].st):''],['Stock value',r=>inr(K.P[r.id]?.val)],['Margin',r=>K.P[r.id]?.m==null?'':(K.P[r.id].m*100).toFixed(1)+'%'],['Reorder',r=>K.P[r.id]&&K.P[r.id].st!=='OK'?lowMsg(r):'']],
 Vendors:[['Total purchased',r=>inr(K.V[r.id]?.t)],['Unpaid',r=>inr(K.V[r.id]?.u)]],
 Customers:[['Total sales',r=>inr(K.C[r.id]?.t)],['Amount due',r=>inr(K.C[r.id]?.u)],['Remind',r=>{const d=K.C[r.id]?.u||0;return wa(r.phone,d?`Dear ${r.name}, your total outstanding with ${biz()} is ${inr(d)}. Kindly pay at the earliest. Thank you.`:`Dear ${r.name}, your account with ${biz()} is clear. Thank you!`)}]],
-Purchases:[['Vendor',r=>esc(K.vn[r.vendorId]||'')],['Product',r=>esc(K.pn[r.productId]||'')],['GST',r=>inr(line(r,'p').g)],['Total incl. GST',r=>inr(line(r,'p').tot)],['Payment msg',r=>payMsg(r,'p')]],
-Sales:[['Customer',r=>esc(K.cn[r.customerId]||'')],['Product',r=>esc(K.pn[r.productId]||'')],['GST',r=>inr(line(r,'s').g)],['Total incl. GST',r=>inr(line(r,'s').tot)],['Profit',r=>inr(line(r,'s').tx-num(r.qty)*num(prod(r.productId)?.cost))],['Invoice',r=>`<button class="sec" data-inv="${esc(r.id)}">Print</button>`],['Payment msg',r=>payMsg(r,'s')]]};
+Purchases:[['Unit Cost',r=>inr(num(prod(r.productId)?.cost))],['Vendor',r=>esc(K.vn[r.vendorId]||'')],['Product',r=>esc(K.pn[r.productId]||'')],['GST',r=>inr(line(r,'p').g)],['Total incl. GST',r=>inr(line(r,'p').tot)],['Payment msg',r=>payMsg(r,'p')]],
+Sales:[['Unit Price',r=>inr(num(prod(r.productId)?.price))],['Customer',r=>esc(K.cn[r.customerId]||'')],['Product',r=>esc(K.pn[r.productId]||'')],['GST',r=>inr(line(r,'s').g)],['Total incl. GST',r=>inr(line(r,'s').tot)],['Profit',r=>inr(line(r,'s').tx-num(r.qty)*num(prod(r.productId)?.cost))],['Invoice',r=>`<button class="sec" data-inv="${esc(r.id)}">Print</button>`],['Payment msg',r=>payMsg(r,'s')]]};
 function cell(f,t,v){
  if(t[0]==='r'){const list=S[t.slice(2)];const ids=list.map(x=>x.id);if(v&&!ids.includes(v))ids.push(v);
   return `<select data-f="${f}"><option value=""></option>${ids.map(id=>`<option value="${esc(id)}"${id===v?' selected':''}>${esc(id)}${list.find(x=>x.id===id)?' · '+esc(list.find(x=>x.id===id).name):''}</option>`).join('')}</select>`}
@@ -54,7 +54,7 @@ function table(name){
  const vis=rows.map((r,i)=>[r,i]).filter(([r])=>!ql||(Object.values(r).join(' ')+' '+(K.P[r.id]&&name==='Products'?K.P[r.id].st:'')).toLowerCase().includes(ql));
  const head=c.cols.map(x=>`<th>${x[1]}</th>`).concat(EX[name].map(x=>`<th>${x[0]}</th>`)).join('')+'<th></th>';
  const body=vis.map(([r,i])=>`<tr data-i="${i}">${c.cols.map(([f,l,t])=>`<td>${cell(f,t,r[f])}</td>`).join('')}${EX[name].map(x=>`<td class="calc">${x[1](r)}</td>`).join('')}<td><button class="sec" data-del="${i}" aria-label="Delete row">✕</button></td></tr>`).join('');
- return `<p class="hint">Showing ${vis.length} of ${rows.length} row(s). Grey columns are calculated. Prices are entered without GST.</p><div class="wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div><p><button data-add>+ Add row</button></p>`}
+ return `<p class="hint">Showing ${vis.length} of ${rows.length} row(s). Grey columns are calculated. Unit prices come from the Products tab (entered without GST).</p><div class="wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div><p><button data-add>+ Add row</button></p>`}
 function dash(){
  const low=S.products.filter(p=>K.P[p.id]&&K.P[p.id].st!=='OK'),g=S.cfg;
  const cards=[['Products',S.products.length],['Vendors',S.vendors.length],['Customers',S.customers.length],['Stock value (cost)',inr(S.products.reduce((a,p)=>a+K.P[p.id].val,0))],['Total purchases (incl. GST)',inr(K.tp)],['Total sales (incl. GST)',inr(K.ts)],['Gross profit (excl. GST)',inr(K.pr)],['To pay vendors',inr(K.pay)],['To receive',inr(K.rec)],['GST collected',inr(K.gout)],['GST paid on purchases',inr(K.gin)],['Net GST payable',inr(K.gout-K.gin)]];
@@ -75,7 +75,7 @@ const longDate=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?new D
 function invoice(no){
  const rows=S.sales.filter(r=>r.id===no);if(!rows.length)return;
  const c=S.customers.find(x=>x.id===rows[0].customerId)||{},g=S.cfg;let tot=0;
- const body=rows.map((r,i)=>{const l=line(r,'s'),p=prod(r.productId)||{};tot+=l.tot;return `<tr><td>${i+1}.</td><td>${esc(p.name||r.productId)}</td><td>${num(r.qty)} ${esc(p.unit||'')}</td><td>${fmt(r.price)}</td><td>${num(p.gst)}%</td><td>${fmt(l.g)}</td><td>${fmt(l.tot)}</td></tr>`}).join('');
+ const body=rows.map((r,i)=>{const l=line(r,'s'),p=prod(r.productId)||{};tot+=l.tot;return `<tr><td>${i+1}.</td><td>${esc(p.name||r.productId)}</td><td>${num(r.qty)} ${esc(p.unit||'')}</td><td>${fmt(p.price)}</td><td>${num(p.gst)}%</td><td>${fmt(l.g)}</td><td>${fmt(l.tot)}</td></tr>`}).join('');
  const terms=String(g.terms||'').split('\n').filter(x=>x.trim()).map(x=>`<li>${esc(x)}</li>`).join('');
  $('#inv').innerHTML=`<div class="iv-top"><img src="logo.png" alt="" class="iv-logo" onerror="this.style.visibility='hidden'"><div class="iv-name">${esc(g.name||'Your Business')}</div></div><div class="iv-line"></div>
  <div class="iv-r"><div class="iv-addr">${nl(g.address)}</div><div>GSTIN : ${esc(g.gstin)}</div><div>Email Id : ${esc(g.email)}</div></div>
@@ -98,7 +98,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-tab],[data
 $('#q').addEventListener('input',e=>{q=e.target.value;render()});
 $('#view').addEventListener('change',e=>{const d=e.target.dataset;
  if(d.cfg){S.cfg[d.cfg]=e.target.value;save();return}
- const tr=e.target.closest('tr');if(!d.f||!tr)return;const row=S[SHEETS[tab].key][+tr.dataset.i];row[d.f]=e.target.value;if(d.f==='productId'){const p=prod(e.target.value);if(p){if(tab==='Sales'&&p.price!=='')row.price=p.price;if(tab==='Purchases'&&p.cost!=='')row.cost=p.cost}}save();render()});
+ const tr=e.target.closest('tr');if(!d.f||!tr)return;const row=S[SHEETS[tab].key][+tr.dataset.i];row[d.f]=e.target.value;save();render()});
 function toDate(v){if(v instanceof Date){const d=new Date(v.getTime()+432e5);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
  if(typeof v==='number')return new Date(Math.round((v-25569)*864e5)).toISOString().slice(0,10);return String(v||'').slice(0,10)}
 $('#file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;if(!window.XLSX)return toast('Excel library did not load');
