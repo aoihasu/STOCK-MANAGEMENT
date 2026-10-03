@@ -1,7 +1,7 @@
 const SHEETS={
 Products:{key:'products',pre:'P',cols:[['id','Product ID','t'],['name','Product Name','t'],['category','Category','t'],['unit','Unit','t'],['vendorId','Vendor ID','r:vendors'],['cost','Cost Price','n'],['price','Selling Price','n'],['gst','GST %','n'],['opening','Opening Stock','n'],['reorder','Reorder Level','n']]},
 Vendors:{key:'vendors',pre:'V',cols:[['id','Vendor ID','t'],['name','Vendor Name','t'],['contact','Contact Person','t'],['phone','Phone','t'],['email','Email','t'],['address','Address','t'],['gstin','GSTIN','t'],['terms','Payment Terms','t']]},
-Customers:{key:'customers',pre:'C',cols:[['id','Customer ID','t'],['name','Customer Name','t'],['phone','Phone','t'],['email','Email','t'],['address','Address','t'],['gstin','GSTIN','t']]},
+Customers:{key:'customers',pre:'C',cols:[['id','Customer ID','t'],['name','Customer Name','t'],['contact','Contact Person','t'],['phone','Phone','t'],['email','Email','t'],['address','Address','t'],['gstin','GSTIN','t']]},
 Purchases:{key:'purchases',pre:'PUR-',cols:[['date','Date','d'],['id','Purchase ID','t'],['vendorId','Vendor ID','r:vendors'],['productId','Product ID','r:products'],['qty','Quantity','n'],['cost','Unit Cost','n'],['status','Payment Status','s']]},
 Sales:{key:'sales',pre:'INV-',cols:[['date','Date','d'],['id','Invoice No','t'],['customerId','Customer ID','r:customers'],['productId','Product ID','r:products'],['qty','Quantity','n'],['price','Unit Price','n'],['status','Payment Status','s']]}};
 const $=s=>document.querySelector(s);
@@ -10,6 +10,8 @@ const num=v=>Number(v)||0;
 const inr=v=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:2}).format(v||0);
 let S={products:[],vendors:[],customers:[],purchases:[],sales:[],cfg:{name:'',gstin:'',address:'',phone:'',cc:'91'}},tab='Dashboard',q='',K;
 try{const r=localStorage.getItem('stockmgr.v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const DCFG={name:'Avon Footwear Machines',address:'Plot No. 112, KH No. 22/23, Meera Enclave, Ranhola, New Delhi 110041',gstin:'07FSAPR8346K1Z4',email:'afmindia98@gmail.com',cc:'91',bank:'HDFC BANK',acno:'50200070797181',ifsc:'HDFC0000328',branch:'C BLOCK VIKAS PURI, DELHI',terms:'Valid for 15 Days.\nPayment Terms : 100% Payment in Advance.\nPrice : Ex-Works Delhi.\nTRANSPORTATION CHARGES will be additional.\nMachine Installation, Services and Spare Parts Chargeable.\nWe are not responsible for any loss or damaged incurred during transportation of the goods.\nThe goods will remain exclusive property of Avon Footwear Machines until full & final payment has been received.'};
+for(const k in DCFG)if(!S.cfg[k])S.cfg[k]=DCFG[k];
 const save=()=>{try{localStorage.setItem('stockmgr.v1',JSON.stringify(S))}catch(e){}};
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3500)}
 const prod=id=>S.products.find(p=>p.id===id);
@@ -59,7 +61,7 @@ function dash(){
  const f=(k,l)=>`<label>${l}<input data-cfg="${k}" value="${esc(g[k])}"></label>`;
  return `<div class="cards">${cards.map(([l,v])=>`<div class="card"><span>${l}</span><b>${v}</b></div>`).join('')}</div>
  <h3>Low stock</h3>${low.length?`<div class="wrap"><table><thead><tr><th>Product</th><th>Stock</th><th>Reorder level</th><th>Status</th><th>Vendor</th><th>Message vendor</th></tr></thead><tbody>${low.map(p=>`<tr><td>${esc(p.name)}</td><td>${K.P[p.id].stock}</td><td>${esc(p.reorder)}</td><td>${badge(K.P[p.id].st)}</td><td>${esc(K.vn[p.vendorId]||'')}</td><td>${lowMsg(p)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="hint">Nothing is low on stock.</p>'}
- <h3>Business details (used on invoices and WhatsApp messages)</h3><div class="form">${f('name','Business name')}${f('gstin','Your GSTIN')}${f('address','Address')}${f('phone','Phone')}${f('cc','Country code for 10-digit numbers')}</div>`}
+ <h3>Business details (used on invoices and WhatsApp messages)</h3><div class="form">${f('name','Business name')}${f('gstin','Your GSTIN')}${f('address','Address')}${f('phone','Phone')}${f('email','Email')}${f('cc','Country code for 10-digit numbers')}${f('bank','Bank name')}${f('acno','Account no.')}${f('ifsc','IFSC code')}${f('branch','Bank branch')}<label style="grid-column:1/-1">Terms &amp; conditions (one per line)<textarea data-cfg="terms" rows="7">${esc(g.terms)}</textarea></label></div>`}
 function render(){
  calc();
  $('#nav').innerHTML=['Dashboard',...Object.keys(SHEETS)].map(n=>`<button class="${n===tab?'on':''}" data-tab="${n}">${n}</button>`).join('');
@@ -67,16 +69,25 @@ function render(){
  $('#alert').innerHTML=K.low&&tab!=='Dashboard'?`<button class="warnbar" data-tab="Dashboard">⚠ ${K.low} item(s) low on stock — tap to view and message vendors</button>`:'';
  $('#view').innerHTML=tab==='Dashboard'?dash():table(tab)}
 function nextId(c){let m=0;S[c.key].forEach(r=>{const x=/(\d+)$/.exec(r.id||'');if(x)m=Math.max(m,+x[1])});return c.pre+String(m+1).padStart(3,'0')}
+const fmt=v=>new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0);
+const nl=s=>esc(s).replace(/\n/g,'<br>');
+const longDate=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s||'');return m?new Date(+m[1],+m[2]-1,+m[3]).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}).toUpperCase():esc(s)};
 function invoice(no){
  const rows=S.sales.filter(r=>r.id===no);if(!rows.length)return;
- const c=S.customers.find(x=>x.id===rows[0].customerId)||{},g=S.cfg;let tx=0,gt=0;
- const body=rows.map((r,i)=>{const l=line(r,'s'),p=prod(r.productId)||{};tx+=l.tx;gt+=l.g;return `<tr><td>${i+1}</td><td>${esc(p.name||r.productId)}</td><td>${num(r.qty)}</td><td>${inr(r.price)}</td><td>${num(p.gst)}%</td><td>${inr(l.tx)}</td><td>${inr(l.g)}</td><td>${inr(l.tot)}</td></tr>`}).join('');
- $('#inv').innerHTML=`<h2>${esc(g.name||'Your Business')}</h2><p>${esc(g.address)}<br>Phone: ${esc(g.phone)} &nbsp; GSTIN: ${esc(g.gstin)}</p><h3>TAX INVOICE</h3>
- <p><b>Invoice No:</b> ${esc(no)} &nbsp; <b>Date:</b> ${esc(rows[0].date)}<br><b>Bill to:</b> ${esc(c.name||rows[0].customerId)}<br>${esc(c.address)} ${esc(c.phone)}<br>${c.gstin?'GSTIN: '+esc(c.gstin):''}</p>
- <table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>GST</th><th>Taxable</th><th>GST amt</th><th>Amount</th></tr></thead><tbody>${body}</tbody></table>
- <p style="text-align:right">Taxable value: ${inr(tx)}<br>Total GST: ${inr(gt)}<br><b style="font-size:16px">Grand total: ${inr(tx+gt)}</b></p>
- <p>Payment status: <b>${esc(rows[0].status)}</b></p><p style="text-align:center">Thank you for your business!</p>`;
- window.print()}
+ const c=S.customers.find(x=>x.id===rows[0].customerId)||{},g=S.cfg;let tot=0;
+ const body=rows.map((r,i)=>{const l=line(r,'s'),p=prod(r.productId)||{};tot+=l.tot;return `<tr><td>${i+1}.</td><td>${esc(p.name||r.productId)}</td><td>${num(r.qty)} ${esc(p.unit||'')}</td><td>${fmt(r.price)}</td><td>${num(p.gst)}%</td><td>${fmt(l.g)}</td><td>${fmt(l.tot)}</td></tr>`}).join('');
+ const terms=String(g.terms||'').split('\n').filter(x=>x.trim()).map(x=>`<li>${esc(x)}</li>`).join('');
+ $('#inv').innerHTML=`<div class="iv-top"><img src="logo.png" alt="" class="iv-logo" onerror="this.style.visibility='hidden'"><div class="iv-name">${esc(g.name||'Your Business')}</div></div><div class="iv-line"></div>
+ <div class="iv-r"><div class="iv-addr">${nl(g.address)}</div><div>GSTIN : ${esc(g.gstin)}</div><div>Email Id : ${esc(g.email)}</div></div>
+ <div class="iv-mid"><div class="iv-title">TAX INVOICE</div><div class="iv-ref"><div><b>Date:</b> ${longDate(rows[0].date)}</div><div><b>Invoice No:</b> <i>${esc(no)}</i></div></div></div>
+ <div class="iv-two"><div class="iv-to">TO<br>${esc(c.name||rows[0].customerId)}<br>${nl(c.address)}<br>GSTIN ${esc(c.gstin)}<br><br>RECEIVER NAME : ${esc(c.contact)}<br>MOBILE NO : ${esc(c.phone)}</div>
+ <div class="iv-bank"><div class="iv-bh">BANK DETAILS :</div>BANK NAME : ${esc(g.bank)}<br>A/C NO. : ${esc(g.acno)}<br>IFSC CODE : ${esc(g.ifsc)}<br>BRANCH : ${esc(g.branch)}</div></div>
+ <div class="iv-band">PAYMENT STATUS : ${esc(rows[0].status).toUpperCase()}</div>
+ <table class="iv-t"><thead><tr><th>S.No.</th><th>DESCRIPTION</th><th>QTY</th><th>UNIT PRICE</th><th>GST</th><th>GST AMOUNT</th><th>TOTAL AMOUNT</th></tr></thead><tbody>${body}</tbody></table>
+ <div class="iv-tot"><span>TOTAL AMOUNT</span><b>${fmt(tot)}</b></div>
+ <div class="iv-terms"><b>Terms &amp; Conditions</b><ol>${terms}</ol></div>
+ <div class="iv-sign"><div>${esc(g.name)}</div><div class="iv-gap"></div><div>Authorized Signature</div></div>`;
+ try{window.print()}catch(e){toast('Printing is blocked in this view')}}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-tab],[data-add],[data-del],[data-inv]');if(!t)return;
  if(t.dataset.tab){tab=t.dataset.tab;q='';$('#q').value='';render();return}
  if(t.dataset.inv){invoice(t.dataset.inv);return}
@@ -87,7 +98,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-tab],[data
 $('#q').addEventListener('input',e=>{q=e.target.value;render()});
 $('#view').addEventListener('change',e=>{const d=e.target.dataset;
  if(d.cfg){S.cfg[d.cfg]=e.target.value;save();return}
- const tr=e.target.closest('tr');if(!d.f||!tr)return;S[SHEETS[tab].key][+tr.dataset.i][d.f]=e.target.value;save();render()});
+ const tr=e.target.closest('tr');if(!d.f||!tr)return;const row=S[SHEETS[tab].key][+tr.dataset.i];row[d.f]=e.target.value;if(d.f==='productId'){const p=prod(e.target.value);if(p){if(tab==='Sales'&&p.price!=='')row.price=p.price;if(tab==='Purchases'&&p.cost!=='')row.cost=p.cost}}save();render()});
 function toDate(v){if(v instanceof Date){const d=new Date(v.getTime()+432e5);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
  if(typeof v==='number')return new Date(Math.round((v-25569)*864e5)).toISOString().slice(0,10);return String(v||'').slice(0,10)}
 $('#file').addEventListener('change',e=>{const file=e.target.files[0];if(!file)return;if(!window.XLSX)return toast('Excel library did not load');

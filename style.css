@@ -29,5 +29,21 @@ input[type=number]{min-width:70px}
 a.btn.wa{background:#1faa59;color:#fff;text-decoration:none;padding:3px 9px;font-size:12px;display:inline-block}
 .form{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.form label{font-size:12px;color:var(--mut)}
 #inv{display:none}
-@media print{body>*:not(#inv){display:none!important}#inv{display:block;color:#000;background:#fff;padding:16px;font-family:Arial,sans-serif}
-#inv table{min-width:0;width:100%;border-collapse:collapse}#inv th,#inv td{border:1px solid #999;padding:5px;color:#000;white-space:normal}}
+textarea{font:inherit;color:var(--fg);background:var(--in);border:1px solid var(--line);border-radius:4px;padding:4px 6px;width:100%}
+@page{size:A4;margin:10mm}
+@media print{
+body>*:not(#inv){display:none!important}html,body{background:#fff!important}
+#inv{display:block;color:#000;background:#fff;font:12px/1.35 Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.iv-top{display:flex;justify-content:space-between;align-items:center}.iv-logo{height:70px}.iv-name{font-size:20px;font-weight:700}
+.iv-line{border-top:3px solid #000;margin:4px 0 8px}.iv-r{text-align:right}
+.iv-mid{display:flex;justify-content:space-between;align-items:flex-start;margin:6px 0 14px}
+.iv-title{background:#d9d9d9;font-size:22px;font-weight:700;padding:8px 12px;width:270px}
+.iv-ref{border:1px solid #333;background:#f2f2f2;padding:6px 10px;text-align:right}
+.iv-two{display:flex;justify-content:space-between;gap:16px;margin-bottom:10px}
+.iv-bank{background:#f2f2f2;padding:8px 12px;min-width:300px}.iv-bh{font-size:15px;margin-bottom:6px}
+.iv-band{background:#f2f2f2;padding:5px 8px;font-size:11px;margin-bottom:8px}
+.iv-t{width:100%;min-width:0;border-collapse:collapse}.iv-t th,.iv-t td{border:1px solid #000;padding:5px 6px;text-align:left;vertical-align:top;font-weight:400;white-space:normal}
+.iv-t th{color:#000;font-size:12px}.iv-t td:nth-child(3){white-space:nowrap}.iv-tot{display:flex;justify-content:flex-end}.iv-tot span{background:#4fc3f7;border:1px solid #000;padding:5px 8px}
+.iv-tot b{border:1px solid #000;border-left:0;padding:5px 8px;min-width:120px;font-weight:400}
+.iv-terms{background:#f2f2f2;width:62%;padding:8px 10px;margin-top:16px;font-size:10px}.iv-terms ol{margin:4px 0 0 16px;padding:0}
+.iv-sign{text-align:right;margin-top:24px}.iv-gap{height:70px}}
